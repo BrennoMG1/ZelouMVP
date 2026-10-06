@@ -1,0 +1,18 @@
+"use client";
+import { PrivacySettings } from "@/app/privacy-settings";
+import { ChatReports } from "@/app/admin/chat-reports";
+
+import { useEffect, useState } from "react";
+import { Check, FileCheck2, ShieldAlert, X } from "lucide-react";
+
+type DocumentItem = { id: string; caregiver_id: string; document_type: string; status: string; reviewer_notes?: string | null; created_at: string };
+
+export default function AdminPage() {
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const load = async () => { const response = await fetch("/api/admin/documents"); const body = await response.json(); setLoading(false); if (!response.ok) { setError(body.error ?? "Não foi possível carregar a administração."); return; } setDocuments(body.documents); };
+  useEffect(() => { void Promise.resolve().then(load); }, []);
+  const review = async (id: string, status: "approved" | "rejected" | "needs_correction") => { const reviewerNotes = status === "approved" ? "Documento analisado pelo Zelou!." : "Verifique as observações da administração."; const response = await fetch(`/api/admin/documents/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status, reviewerNotes }) }); if (response.ok) setDocuments((current) => current.map((document) => document.id === id ? { ...document, status, reviewer_notes: reviewerNotes } : document)); };
+  return <main style={{ minHeight: "100vh", background: "#f4f8f8", padding: "42px max(20px, calc((100vw - 1100px) / 2))" }}><div className="section-heading"><div><h1 className="display" style={{ margin: 0 }}>Administração Zelou!</h1><p className="subtle" style={{ marginTop: 7 }}>Revisão de documentos profissionais e ações auditáveis.</p></div><span className="status">Área restrita</span></div>{error && <div role="alert" style={{ marginTop: 20, padding: 14, background: "#fff0ea", color: "#b96550", borderRadius: 9 }}>{error}</div>}{loading ? <div className="panel" style={{ marginTop: 22, padding: 25 }}>Carregando documentos...</div> : <section className="panel" style={{ marginTop: 22 }}><div className="panel-head"><div><h2 className="panel-title">Documentos para análise</h2><p className="subtle" style={{ marginTop: 5, fontSize: 12 }}>{documents.filter((document) => document.status === "under_review").length} pendentes de revisão</p></div><FileCheck2 size={23} color="#328c6c" /></div>{documents.length ? documents.map((document) => <article className="admin-document" key={document.id}><div className="admin-document-icon"><ShieldAlert size={18} /></div><div className="admin-document-copy"><strong>{document.document_type === "diploma_or_certificate" ? "Diploma ou certificado" : document.document_type}</strong><small>Cuidador: {document.caregiver_id}</small><small>Enviado em {new Date(document.created_at).toLocaleString("pt-BR")}</small>{document.reviewer_notes && <p>{document.reviewer_notes}</p>}</div><span className={`status admin-status-${document.status}`}>{document.status === "under_review" ? "Em análise" : document.status === "needs_correction" ? "Necessita correção" : document.status === "approved" ? "Aprovado" : "Reprovado"}</span><div className="admin-actions"><button className="admin-approve" onClick={() => review(document.id, "approved")} aria-label="Aprovar documento"><Check size={16} /></button><button className="admin-reject" onClick={() => review(document.id, "rejected")} aria-label="Reprovar documento"><X size={16} /></button></div></article>) : <div style={{ padding: 35, textAlign: "center", color: "#6b7e84" }}>Nenhum documento enviado.</div>}</section>}<ChatReports /><PrivacySettings admin /></main>;
+}
