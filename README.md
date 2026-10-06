@@ -58,8 +58,6 @@ As migrations criam buckets privados `documents` e `avatars`. Uploads ocorrem po
 
 RLS separa dados próprios, partes de contratos e membros de conversa. Criação validada de conversa/contrato e operações administrativas usam service role exclusivamente no servidor, após validar sessão, papel e relacionamento.
 
-Antes de produção, teste com pelo menos dois usuários num projeto Supabase isolado: SELECT/INSERT/UPDATE/DELETE cruzados em `profiles`, `elderly_profiles`, `opportunities`, `applications`, `contracts`, `appointments`, `reports`, `conversations`, `messages`, `documents` e `storage.objects`.
-
 ## Rate limiting
 
 O limite atual é em memória por processo, suficiente apenas para desenvolvimento/instância única. Para deploy distribuído, implemente um adaptador Redis/Upstash usando as variáveis indicadas em `.env.example`; múltiplas instâncias não compartilham contadores hoje.
